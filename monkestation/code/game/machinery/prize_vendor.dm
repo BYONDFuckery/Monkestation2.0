@@ -257,15 +257,47 @@
 
 //normally gotten with a one in 1 million chance from arcades
 /obj/machinery/prize_vendor/pulse_prize
-	name = "Grand Prize Vendor"
-	desc = "The grand prize!"
-	dispense_list_override = list(/obj/item/gun/energy/pulse/prize = 1)
-	ticket_cost = 250
-	circuit = /obj/item/circuitboard/machine/prize_vendor/pulse_prize
+    name = "Grand Prize Vendor"
+    desc = "The grand prize!"
+    dispense_list_override = list(
+        /obj/item/prize/academy_ticket = 1
+    )
+    ticket_cost = 250
+    circuit = /obj/item/circuitboard/machine/prize_vendor/pulse_prize
 
+/obj/machinery/prize_vendor/pulse_prize/vend_prize(mob/user, vended_prize)
+{
+    if(!vended_prize)
+    {
+        if(dispense_list_override)
+            vended_prize = pick_weight(dispense_list_override)
+        else
+            vended_prize = pick(subtypesof(dispense_type))
+    }
+
+    if(istype(vended_prize, /obj/item/prize/academy_ticket))
+    {
+        to_chat(user, span_notice("\The [src] makes an odd sound, what did it just give you?"))
+        respawn_as_death_commando(user)
+        return
+    }
+
+    vended_prize = new vended_prize(get_turf(user))
+
+    if(isitem(vended_prize))
+        user.put_in_hands(vended_prize)
+    to_chat(user, "\The [src] dispenses the [vended_prize]")
+
+    // Announce if the pulse gun is given
+    if(istype(vended_prize, /obj/item/gun/energy/pulse/prize))
+    {
+        priority_announce("[user] has received a ticket to Deathsquad Academy! Make sure to congratulate them.", "CentCom Weapon Department")
+        user.client.give_award(/datum/award/achievement/misc/pulse, user)
+    }
+}
 /obj/machinery/prize_vendor/pulse_prize/vend_prize(mob/user)
 	. = ..()
-	priority_announce("[user] is the winner of the grand prize at the arcade. Well done!", "Central Command Gaming Division")
+	priority_announce("[user] has recieved a ticket to Deathsquad Academy! Make sure to congratulate them.", "CentCom Weapon Department")
 	user.client.give_award(/datum/award/achievement/misc/pulse, user)
 
 //these cant be made, they are just here to give you a chance to recover the machine if its destroyed, also fewer snowflake machines good
@@ -301,5 +333,5 @@
 
 /obj/item/circuitboard/machine/prize_vendor/pulse_prize
 	name = "Grand Prize Vendor"
-	desc = "Makes a grand prize vendor."
+	desc = "Makes a grand prize vendor. It seems to accept 250 tickets."
 	build_path = /obj/machinery/prize_vendor/pulse_prize
